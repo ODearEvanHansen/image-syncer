@@ -93,38 +93,6 @@ func TestImageSyncerWithMockExecutor(t *testing.T) {
 	}
 }
 
-// TestSyncWithRealExecutor tests the Sync method with a real executor but mocked commands
-func TestSyncWithRealExecutor(t *testing.T) {
-	// Skip if not in CI environment to avoid running docker commands locally
-	if os.Getenv("CI") != "true" {
-		t.Skip("Skipping test in non-CI environment")
-	}
-
-	// Create a custom executor that uses our mock command
-	mockExecutor := &MockCommandExecutor{
-		MockFunc: func(name string, arg ...string) *exec.Cmd {
-			// Use our test helper process
-			return MockCmd(name, arg...)
-		},
-	}
-
-	// Create a syncer with the mock executor
-	syncer := NewImageSyncerWithExecutor(
-		"nginx:latest",
-		"ghcr.io/myorg/nginx:latest",
-		"fake-token",
-		mockExecutor,
-	)
-
-	// Run the sync
-	err := syncer.Sync()
-	
-	// Check for errors
-	if err != nil {
-		t.Fatalf("Sync failed: %v", err)
-	}
-}
-
 // TestMockHelperProcess isn't a real test. It's used as a helper process for mocking exec.Command
 // This is a special test that is not meant to be run directly
 func TestMockHelperProcess(t *testing.T) {

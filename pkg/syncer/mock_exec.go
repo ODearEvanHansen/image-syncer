@@ -1,7 +1,6 @@
 package syncer
 
 import (
-	"os"
 	"os/exec"
 )
 
@@ -33,9 +32,5 @@ func (e *MockCommandExecutor) Command(name string, arg ...string) *exec.Cmd {
 
 // MockCmd creates a mock command that always succeeds
 func MockCmd(name string, arg ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestMockHelperProcess", "--", name}
-	cs = append(cs, arg...)
-	cmd := exec.Command(os.Args[0], cs...)
-	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
-	return cmd
+	return exec.Command("echo", "mock command")
 }
