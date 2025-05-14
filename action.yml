@@ -35,6 +35,11 @@ runs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ inputs.github_token }}
+        
+    # Set GITHUB_ACTOR environment variable explicitly
+    - name: Set GITHUB_ACTOR
+      shell: bash
+      run: echo "GITHUB_ACTOR=${{ github.actor }}" >> $GITHUB_ENV
 
     - name: Build image-syncer
       shell: bash

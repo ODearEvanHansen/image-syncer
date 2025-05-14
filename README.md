@@ -120,6 +120,26 @@ go build -o image-syncer ./cmd/image-syncer
 
 This project is licensed under the terms of the license included in the repository.
 
+## Testing
+
+The project includes unit tests for the core functionality. To run the tests:
+
+```bash
+go test -v ./pkg/syncer
+```
+
+### Test Coverage
+
+The tests cover:
+- Parsing target image names
+- Command execution with mock executors
+- CLI validation
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+When contributing, please ensure:
+1. Tests are added for new functionality
+2. Existing tests pass
+3. Code follows the existing style
