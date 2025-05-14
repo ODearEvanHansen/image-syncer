@@ -1,8 +1,6 @@
 package syncer
 
 import (
-	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -93,45 +91,8 @@ func TestImageSyncerWithMockExecutor(t *testing.T) {
 	}
 }
 
-// TestMockHelperProcess isn't a real test. It's used as a helper process for mocking exec.Command
-// This is a special test that is not meant to be run directly
+// TestMockHelperProcess is a placeholder test that does nothing
+// We don't need this anymore since we simplified our mocking approach
 func TestMockHelperProcess(t *testing.T) {
-	// This test is used as a helper process and is not meant to be run directly
-	// Skip it when running tests normally
-	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
-		t.Skip("Not a real test")
-		return
-	}
-
-	// If we get here, we're being used as a helper process
-	defer os.Exit(0)
-
-	args := os.Args
-	for len(args) > 0 {
-		if args[0] == "--" {
-			args = args[1:]
-			break
-		}
-		args = args[1:]
-	}
-
-	if len(args) == 0 {
-		os.Exit(1)
-	}
-
-	cmd, args := args[0], args[1:]
-	switch cmd {
-	case "docker":
-		if len(args) > 0 && args[0] == "pull" {
-			fmt.Println("Image pulled successfully")
-		} else if len(args) > 0 && args[0] == "tag" {
-			fmt.Println("Image tagged successfully")
-		} else if len(args) > 0 && args[0] == "login" {
-			fmt.Println("Login Succeeded")
-		} else if len(args) > 0 && args[0] == "push" {
-			fmt.Println("Image pushed successfully")
-		}
-	default:
-		os.Exit(1)
-	}
+	t.Skip("Not a real test")
 }
