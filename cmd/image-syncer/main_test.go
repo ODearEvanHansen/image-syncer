@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -21,15 +22,11 @@ func TestMainCLI(t *testing.T) {
 	
 	// Check if the output contains the usage information
 	outputStr := string(output)
-	if !contains(outputStr, "source image, target organization, and GHCR token are required") {
+	if !strings.Contains(outputStr, "source image, target organization, and GHCR token are required") {
 		t.Errorf("Expected usage information in output, but got: %s", outputStr)
 	}
 
 	// Test with valid arguments (mock mode)
 	// This would require setting up environment variables and mocks
 	// For a real test, we would need to set up Docker and GHCR credentials
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[0:len(substr)] == substr
 }
