@@ -19,6 +19,41 @@ The Image Syncer:
 
 ## Usage as a GitHub Action
 
+You can use this action in two ways:
+
+### Option 1: Use the pre-built action
+
+```yaml
+name: Sync Container Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_image:
+        description: 'Source container image to sync (e.g., nginx:latest, ubuntu:20.04)'
+        required: true
+      target_org:
+        description: 'Target organization in GHCR (default: current repository owner)'
+        required: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    
+    steps:
+      - name: Sync container image
+        uses: ODearEvanHansen/image-syncer@main
+        with:
+          source_image: ${{ github.event.inputs.source_image }}
+          target_org: ${{ github.event.inputs.target_org }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Option 2: Build and run in your workflow
+
 ### Setting Up the GitHub Action
 
 1. Add the GitHub Action workflow to your repository by creating a file at `.github/workflows/image-sync.yml`
@@ -65,6 +100,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.19'
+          cache: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -78,6 +114,15 @@ jobs:
 
       - name: Build image-syncer
         run: |
+          # Initialize go module if it doesn't exist
+          if [ ! -f go.mod ]; then
+            go mod init github.com/${{ github.repository }}
+          fi
+          
+          # Download dependencies
+          go mod tidy
+          
+          # Build the binary
           go build -o image-syncer ./cmd/image-syncer
 
       - name: Sync image
