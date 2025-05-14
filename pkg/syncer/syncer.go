@@ -102,6 +102,9 @@ func ParseTargetImage(sourceImage, targetOrg string) string {
 		imagePart = sourceImage
 	}
 
+	// Convert target organization to lowercase as required by GHCR
+	targetOrg = strings.ToLower(targetOrg)
+
 	// If the target org doesn't include ghcr.io, add it
 	if !strings.HasPrefix(targetOrg, "ghcr.io/") {
 		targetOrg = "ghcr.io/" + targetOrg

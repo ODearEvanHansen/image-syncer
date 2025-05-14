@@ -7,6 +7,7 @@ A tool to sync container images from any public container registry to GitHub Con
 - Sync container images from any public registry to GitHub Container Registry (ghcr.io)
 - Run as a GitHub Action with manual triggering
 - Configurable source image and target organization
+- Written in Go for performance and reliability
 
 ## How It Works
 

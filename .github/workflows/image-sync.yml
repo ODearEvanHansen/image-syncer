@@ -6,6 +6,7 @@ on:
       source_image:
         description: 'Source container image to sync (e.g., nginx:latest, ubuntu:20.04)'
         required: true
+        default: 'nginx:latest'
       target_org:
         description: 'Target organization in GHCR (default: current repository owner)'
         required: false
