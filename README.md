@@ -19,6 +19,41 @@ The Image Syncer:
 
 ## Usage as a GitHub Action
 
+You can use this action in two ways:
+
+### Option 1: Use the pre-built action
+
+```yaml
+name: Sync Container Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_image:
+        description: 'Source container image to sync (e.g., nginx:latest, ubuntu:20.04)'
+        required: true
+      target_org:
+        description: 'Target organization in GHCR (default: current repository owner)'
+        required: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    
+    steps:
+      - name: Sync container image
+        uses: ODearEvanHansen/image-syncer@main
+        with:
+          source_image: ${{ github.event.inputs.source_image }}
+          target_org: ${{ github.event.inputs.target_org }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Option 2: Build and run in your workflow
+
 ### Setting Up the GitHub Action
 
 1. Add the GitHub Action workflow to your repository by creating a file at `.github/workflows/image-sync.yml`
@@ -49,7 +84,6 @@ on:
       target_org:
         description: 'Target organization in GHCR (default: current repository owner)'
         required: false
-        default: ${{ github.repository_owner }}
 
 jobs:
   sync:
@@ -66,6 +100,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: '1.19'
+          cache: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -79,6 +114,15 @@ jobs:
 
       - name: Build image-syncer
         run: |
+          # Initialize go module if it doesn't exist
+          if [ ! -f go.mod ]; then
+            go mod init github.com/${{ github.repository }}
+          fi
+          
+          # Download dependencies
+          go mod tidy
+          
+          # Build the binary
           go build -o image-syncer ./cmd/image-syncer
 
       - name: Sync image
@@ -120,6 +164,26 @@ go build -o image-syncer ./cmd/image-syncer
 
 This project is licensed under the terms of the license included in the repository.
 
+## Testing
+
+The project includes unit tests for the core functionality. To run the tests:
+
+```bash
+go test -v ./pkg/syncer
+```
+
+### Test Coverage
+
+The tests cover:
+- Parsing target image names
+- Command execution with mock executors
+- CLI validation
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+When contributing, please ensure:
+1. Tests are added for new functionality
+2. Existing tests pass
+3. Code follows the existing style

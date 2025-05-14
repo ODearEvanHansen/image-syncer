@@ -27,7 +27,7 @@ func main() {
 	// Generate target image name
 	targetImage := syncer.ParseTargetImage(*sourceImage, *targetOrg)
 
-	// Create a new image syncer
+	// Create a new image syncer with the real command executor
 	imageSyncer := syncer.NewImageSyncer(*sourceImage, targetImage, *ghcrToken)
 
 	// Sync the image

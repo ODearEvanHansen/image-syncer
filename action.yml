@@ -12,11 +12,9 @@ inputs:
   target_org:
     description: 'Target organization in GHCR (default: current repository owner)'
     required: false
-    default: ${{ github.repository_owner }}
   github_token:
     description: 'GitHub token for GHCR authentication'
     required: true
-    default: ${{ github.token }}
 
 runs:
   using: 'composite'
@@ -25,6 +23,7 @@ runs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.19'
+        cache: false
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -35,11 +34,30 @@ runs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ inputs.github_token }}
+        
+    # Set GITHUB_ACTOR environment variable explicitly
+    - name: Set GITHUB_ACTOR and debug environment
+      shell: bash
+      run: |
+        echo "GITHUB_ACTOR=${{ github.actor }}" >> $GITHUB_ENV
+        echo "Current directory: $(pwd)"
+        ls -la
+        echo "Go version: $(go version)"
 
     - name: Build image-syncer
       shell: bash
       run: |
         cd ${{ github.action_path }}
+        
+        # Initialize go module if it doesn't exist
+        if [ ! -f go.mod ]; then
+          go mod init github.com/${{ github.repository }}
+        fi
+        
+        # Download dependencies
+        go mod tidy
+        
+        # Build the binary
         go build -o image-syncer ./cmd/image-syncer
 
     - name: Sync image
