@@ -58,7 +58,16 @@ func (s *ImageSyncer) Sync() error {
 	fmt.Println("Logging in to GHCR")
 	githubActor := os.Getenv("GITHUB_ACTOR")
 	if githubActor == "" {
-		githubActor = "github-actions"
+		// Try to get the username from git config as fallback
+		gitCmd := s.Executor.Command("git", "config", "user.name")
+		output, err := gitCmd.Output()
+		if err == nil && len(output) > 0 {
+			githubActor = strings.TrimSpace(string(output))
+		} else {
+			// Default fallback
+			githubActor = "github-actions"
+		}
+		fmt.Printf("GITHUB_ACTOR not set, using: %s\n", githubActor)
 	}
 	loginCmd := s.Executor.Command("docker", "login", "ghcr.io", "-u", githubActor, "--password-stdin")
 	loginCmd.Stdin = strings.NewReader(s.GHCRToken)
