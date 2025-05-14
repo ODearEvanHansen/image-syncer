@@ -31,6 +31,18 @@ func TestParseTargetImage(t *testing.T) {
 			targetOrg:   "ghcr.io/myorg",
 			expected:    "ghcr.io/myorg/alpine:3.14",
 		},
+		{
+			name:        "Target org with uppercase characters",
+			sourceImage: "nginx:latest",
+			targetOrg:   "MyOrg",
+			expected:    "ghcr.io/myorg/nginx:latest",
+		},
+		{
+			name:        "Target org with mixed case and ghcr.io prefix",
+			sourceImage: "alpine:3.14",
+			targetOrg:   "ghcr.io/MyOrg",
+			expected:    "ghcr.io/myorg/alpine:3.14",
+		},
 	}
 
 	for _, tc := range tests {
@@ -51,6 +63,12 @@ func TestImageSyncerWithMockExecutor(t *testing.T) {
 		MockFunc: func(name string, arg ...string) *exec.Cmd {
 			// Record the command
 			executedCommands = append(executedCommands, name+" "+strings.Join(arg, " "))
+			
+			// Special case for git config to return a username
+			if name == "git" && len(arg) > 0 && arg[0] == "config" {
+				cmd := exec.Command("echo", "mockuser")
+				return cmd
+			}
 			
 			// Create a command that always succeeds
 			cmd := exec.Command("echo", "mock command")
@@ -76,7 +94,8 @@ func TestImageSyncerWithMockExecutor(t *testing.T) {
 	expectedCommands := []string{
 		"docker pull nginx:latest",
 		"docker tag nginx:latest ghcr.io/myorg/nginx:latest",
-		"docker login ghcr.io -u github-actions --password-stdin",
+		"git config user.name",
+		"docker login ghcr.io -u mockuser --password-stdin",
 		"docker push ghcr.io/myorg/nginx:latest",
 	}
 
