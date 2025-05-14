@@ -1,7 +1,7 @@
 package syncer
 
 import (
-	"io"
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -93,11 +93,49 @@ func TestImageSyncerWithMockExecutor(t *testing.T) {
 	}
 }
 
+// TestSyncWithRealExecutor tests the Sync method with a real executor but mocked commands
+func TestSyncWithRealExecutor(t *testing.T) {
+	// Skip if not in CI environment to avoid running docker commands locally
+	if os.Getenv("CI") != "true" {
+		t.Skip("Skipping test in non-CI environment")
+	}
+
+	// Create a custom executor that uses our mock command
+	mockExecutor := &MockCommandExecutor{
+		MockFunc: func(name string, arg ...string) *exec.Cmd {
+			// Use our test helper process
+			return MockCmd(name, arg...)
+		},
+	}
+
+	// Create a syncer with the mock executor
+	syncer := NewImageSyncerWithExecutor(
+		"nginx:latest",
+		"ghcr.io/myorg/nginx:latest",
+		"fake-token",
+		mockExecutor,
+	)
+
+	// Run the sync
+	err := syncer.Sync()
+	
+	// Check for errors
+	if err != nil {
+		t.Fatalf("Sync failed: %v", err)
+	}
+}
+
 // TestMockHelperProcess isn't a real test. It's used as a helper process for mocking exec.Command
+// This is a special test that is not meant to be run directly
 func TestMockHelperProcess(t *testing.T) {
+	// This test is used as a helper process and is not meant to be run directly
+	// Skip it when running tests normally
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		t.Skip("Not a real test")
 		return
 	}
+
+	// If we get here, we're being used as a helper process
 	defer os.Exit(0)
 
 	args := os.Args
@@ -117,13 +155,13 @@ func TestMockHelperProcess(t *testing.T) {
 	switch cmd {
 	case "docker":
 		if len(args) > 0 && args[0] == "pull" {
-			io.WriteString(os.Stdout, "Image pulled successfully\n")
+			fmt.Println("Image pulled successfully")
 		} else if len(args) > 0 && args[0] == "tag" {
-			io.WriteString(os.Stdout, "Image tagged successfully\n")
+			fmt.Println("Image tagged successfully")
 		} else if len(args) > 0 && args[0] == "login" {
-			io.WriteString(os.Stdout, "Login Succeeded\n")
+			fmt.Println("Login Succeeded")
 		} else if len(args) > 0 && args[0] == "push" {
-			io.WriteString(os.Stdout, "Image pushed successfully\n")
+			fmt.Println("Image pushed successfully")
 		}
 	default:
 		os.Exit(1)
