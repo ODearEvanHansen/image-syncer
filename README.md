@@ -49,7 +49,6 @@ on:
       target_org:
         description: 'Target organization in GHCR (default: current repository owner)'
         required: false
-        default: ${{ github.repository_owner }}
 
 jobs:
   sync:

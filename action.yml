@@ -12,11 +12,9 @@ inputs:
   target_org:
     description: 'Target organization in GHCR (default: current repository owner)'
     required: false
-    default: ${{ github.repository_owner }}
   github_token:
     description: 'GitHub token for GHCR authentication'
     required: true
-    default: ${{ github.token }}
 
 runs:
   using: 'composite'
