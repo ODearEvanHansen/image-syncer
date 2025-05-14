@@ -38,8 +38,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           
       # Set GITHUB_ACTOR environment variable explicitly
-      - name: Set GITHUB_ACTOR
-        run: echo "GITHUB_ACTOR=${{ github.actor }}" >> $GITHUB_ENV
+      - name: Set GITHUB_ACTOR and debug environment
+        run: |
+          echo "GITHUB_ACTOR=${{ github.actor }}" >> $GITHUB_ENV
+          echo "Current directory: $(pwd)"
+          ls -la
+          echo "Go version: $(go version)"
 
       - name: Build image-syncer
         run: |
