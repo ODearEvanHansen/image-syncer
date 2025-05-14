@@ -7,6 +7,7 @@ A tool to sync container images from any public container registry to GitHub Con
 - Sync container images from any public registry to GitHub Container Registry (ghcr.io)
 - Run as a GitHub Action with manual triggering
 - Configurable source image and target organization
+- Simple integration with GitHub Actions workflows
 
 ## How It Works
 
@@ -17,9 +18,46 @@ The Image Syncer:
 3. Authenticates with GitHub Container Registry
 4. Pushes the image to GitHub Container Registry
 
+## Why Use Image Syncer?
+
+- **Simplified Dependency Management**: Keep copies of external container images in your own GitHub Container Registry
+- **Improved Reliability**: Reduce dependency on external registries that might have downtime
+- **Version Control**: Maintain specific versions of container images that work with your applications
+- **Access Control**: Manage access to container images through GitHub's permissions system
+
 ## Usage as a GitHub Action
 
-### Setting Up the GitHub Action
+### Option 1: Using the Action Directly in Your Workflow
+
+You can use this action directly in your workflow by referencing it:
+
+```yaml
+name: Sync Container Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_image:
+        description: 'Source container image to sync'
+        required: true
+        default: 'nginx:latest'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    
+    steps:
+      - name: Sync container image
+        uses: ODearEvanHansen/image-syncer@main
+        with:
+          source_image: ${{ github.event.inputs.source_image }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Option 2: Setting Up a Complete Workflow
 
 1. Add the GitHub Action workflow to your repository by creating a file at `.github/workflows/image-sync.yml`
 2. Ensure your repository has the necessary permissions to write packages
@@ -82,6 +120,8 @@ jobs:
           go build -o image-syncer ./cmd/image-syncer
 
       - name: Sync image
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
         run: |
           TARGET_ORG="${{ github.event.inputs.target_org }}"
           if [ -z "$TARGET_ORG" ]; then
@@ -120,6 +160,24 @@ go build -o image-syncer ./cmd/image-syncer
 
 This project is licensed under the terms of the license included in the repository.
 
+## Testing
+
+### Running Tests
+
+```bash
+go test -v ./pkg/syncer
+```
+
+### Testing the GitHub Action
+
+You can test the GitHub Action by creating a workflow that uses the action and manually triggering it with a public container image.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request

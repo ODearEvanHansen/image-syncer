@@ -7,19 +7,53 @@ import (
 	"strings"
 )
 
+// CommandExecutor is an interface for executing commands
+type CommandExecutor interface {
+	Execute(name string, args ...string) error
+}
+
+// DefaultExecutor is the default implementation of CommandExecutor
+type DefaultExecutor struct{}
+
+// Execute runs a command with the given name and arguments
+func (e *DefaultExecutor) Execute(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// DockerLoginExecutor is a special executor for Docker login that handles stdin
+type DockerLoginExecutor struct {
+	Token string
+}
+
+// Execute runs the Docker login command with the token provided via stdin
+func (e *DockerLoginExecutor) Execute(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = strings.NewReader(e.Token)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 // ImageSyncer handles the syncing of container images from a source registry to GHCR
 type ImageSyncer struct {
 	SourceImage string
 	TargetImage string
 	GHCRToken   string
+	Executor    CommandExecutor
+	LoginExecutor CommandExecutor
 }
 
-// NewImageSyncer creates a new ImageSyncer instance
+// NewImageSyncer creates a new ImageSyncer instance with default executors
 func NewImageSyncer(sourceImage, targetImage, ghcrToken string) *ImageSyncer {
 	return &ImageSyncer{
 		SourceImage: sourceImage,
 		TargetImage: targetImage,
 		GHCRToken:   ghcrToken,
+		Executor:    &DefaultExecutor{},
+		LoginExecutor: &DockerLoginExecutor{Token: ghcrToken},
 	}
 }
 
@@ -27,19 +61,13 @@ func NewImageSyncer(sourceImage, targetImage, ghcrToken string) *ImageSyncer {
 func (s *ImageSyncer) Sync() error {
 	// Pull the source image
 	fmt.Printf("Pulling source image: %s\n", s.SourceImage)
-	pullCmd := exec.Command("docker", "pull", s.SourceImage)
-	pullCmd.Stdout = os.Stdout
-	pullCmd.Stderr = os.Stderr
-	if err := pullCmd.Run(); err != nil {
+	if err := s.Executor.Execute("docker", "pull", s.SourceImage); err != nil {
 		return fmt.Errorf("failed to pull source image: %w", err)
 	}
 
 	// Tag the image for GHCR
 	fmt.Printf("Tagging image for GHCR: %s\n", s.TargetImage)
-	tagCmd := exec.Command("docker", "tag", s.SourceImage, s.TargetImage)
-	tagCmd.Stdout = os.Stdout
-	tagCmd.Stderr = os.Stderr
-	if err := tagCmd.Run(); err != nil {
+	if err := s.Executor.Execute("docker", "tag", s.SourceImage, s.TargetImage); err != nil {
 		return fmt.Errorf("failed to tag image: %w", err)
 	}
 
@@ -49,20 +77,14 @@ func (s *ImageSyncer) Sync() error {
 	if githubActor == "" {
 		githubActor = "github-actions"
 	}
-	loginCmd := exec.Command("docker", "login", "ghcr.io", "-u", githubActor, "--password-stdin")
-	loginCmd.Stdin = strings.NewReader(s.GHCRToken)
-	loginCmd.Stdout = os.Stdout
-	loginCmd.Stderr = os.Stderr
-	if err := loginCmd.Run(); err != nil {
+	
+	if err := s.LoginExecutor.Execute("docker", "login", "ghcr.io", "-u", githubActor, "--password-stdin"); err != nil {
 		return fmt.Errorf("failed to login to GHCR: %w", err)
 	}
 
 	// Push the image to GHCR
 	fmt.Printf("Pushing image to GHCR: %s\n", s.TargetImage)
-	pushCmd := exec.Command("docker", "push", s.TargetImage)
-	pushCmd.Stdout = os.Stdout
-	pushCmd.Stderr = os.Stderr
-	if err := pushCmd.Run(); err != nil {
+	if err := s.Executor.Execute("docker", "push", s.TargetImage); err != nil {
 		return fmt.Errorf("failed to push image to GHCR: %w", err)
 	}
 

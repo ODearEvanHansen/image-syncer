@@ -44,6 +44,8 @@ runs:
 
     - name: Sync image
       shell: bash
+      env:
+        GITHUB_ACTOR: ${{ github.actor }}
       run: |
         cd ${{ github.action_path }}
         TARGET_ORG="${{ inputs.target_org }}"
