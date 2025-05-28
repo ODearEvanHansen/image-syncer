@@ -1,10 +1,60 @@
 package syncer
 
 import (
+	"errors"
 	"os/exec"
 	"strings"
 	"testing"
 )
+
+// MockExecutor implements CommandExecutor for testing
+type MockExecutor struct {
+	ShouldError bool
+}
+
+func (m *MockExecutor) Run(cmd *exec.Cmd) error {
+	if m.ShouldError {
+		return errors.New("mock error")
+	}
+	return nil
+}
+
+func TestNewImageSyncer(t *testing.T) {
+	tests := []struct {
+		name        string
+		sourceImage string
+		targetImage string
+		ghcrToken   string
+		shouldError bool
+	}{
+		{
+			name:        "Valid inputs",
+			sourceImage: "nginx:latest",
+			targetImage: "ghcr.io/myorg/nginx:latest",
+			ghcrToken:   "token",
+			shouldError: false,
+		},
+		{
+			name:        "Empty source image",
+			sourceImage: "",
+			targetImage: "ghcr.io/myorg/nginx:latest",
+			ghcrToken:   "token",
+			shouldError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			syncer := NewImageSyncer(tt.sourceImage, tt.targetImage, tt.ghcrToken)
+			if tt.shouldError && syncer != nil {
+				t.Errorf("Expected error but got nil")
+			}
+			if !tt.shouldError && syncer == nil {
+				t.Errorf("Expected non-nil syncer but got nil")
+			}
+		})
+	}
+}
 
 func TestParseTargetImage(t *testing.T) {
 	tests := []struct {
