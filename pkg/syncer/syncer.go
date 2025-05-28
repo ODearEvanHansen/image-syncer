@@ -16,6 +16,9 @@ type ImageSyncer struct {
 
 // NewImageSyncer creates a new ImageSyncer instance
 func NewImageSyncer(sourceImage, targetImage, ghcrToken string) *ImageSyncer {
+	if sourceImage == "" {
+		return nil
+	}
 	return &ImageSyncer{
 		SourceImage: sourceImage,
 		TargetImage: targetImage,
