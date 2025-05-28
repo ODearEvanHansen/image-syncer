@@ -45,15 +45,12 @@ func TestNewImageSyncer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			syncer, err := NewImageSyncer(tt.sourceImage, tt.targetImage, tt.ghcrToken)
+			syncer := NewImageSyncer(tt.sourceImage, tt.targetImage, tt.ghcrToken)
 			if tt.shouldError {
-				if err == nil {
-					t.Errorf("Expected error but got nil")
+				if syncer != nil {
+					t.Errorf("Expected nil syncer for error case but got non-nil")
 				}
 			} else {
-				if err != nil {
-					t.Errorf("Expected no error but got: %v", err)
-				}
 				if syncer == nil {
 					t.Errorf("Expected non-nil syncer but got nil")
 				}
